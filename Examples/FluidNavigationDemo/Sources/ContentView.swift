@@ -91,6 +91,40 @@ struct ContentView: View {
                         color: .purple
                     )
                 }
+                
+                FluidNavigationButton(
+                    destination: ModalView(
+                        title: "Full Screen Cover",
+                        description: "A full screen modal presentation that covers the entire screen.",
+                        color: .red,
+                        isFullScreen: true
+                    ),
+                    transition: .fullScreenCover
+                ) {
+                    DemoButtonView(
+                        title: "Full Screen Cover",
+                        subtitle: "Complete screen takeover",
+                        systemImage: "rectangle.fill",
+                        color: .red
+                    )
+                }
+                
+                FluidNavigationButton(
+                    destination: ModalView(
+                        title: "Sheet Modal",
+                        description: "A partial screen sheet modal that slides up from the bottom.",
+                        color: .teal,
+                        isFullScreen: false
+                    ),
+                    transition: .sheet
+                ) {
+                    DemoButtonView(
+                        title: "Sheet Transition",
+                        subtitle: "Partial screen modal",
+                        systemImage: "rectangle.bottomhalf.filled",
+                        color: .teal
+                    )
+                }
             }
             
             Spacer()
@@ -294,6 +328,38 @@ struct NestedView: View {
             Spacer()
         }
         .fluidNavigationTitle("Level \(level)")
+        .padding()
+    }
+}
+
+struct ModalView: View {
+    let title: String
+    let description: String
+    let color: Color
+    let isFullScreen: Bool
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            Text(title)
+                .font(.largeTitle)
+                .fontWeight(.bold)
+            
+            Text(description)
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+            
+            if isFullScreen {
+                Text("This is a full screen modal")
+                    .font(.headline)
+            } else {
+                Text("This is a partial screen modal")
+                    .font(.headline)
+            }
+            
+            Spacer()
+        }
+        .fluidNavigationTitle(title)
         .padding()
     }
 }

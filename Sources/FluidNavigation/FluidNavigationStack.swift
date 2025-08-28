@@ -12,12 +12,19 @@ public struct FluidNavigationStack<Root: View>: View {
     private let enableSwipeBack: Bool
     
     @State private var navigationStack: [AnyView] = []
+    @State private var modalStack: [ModalPresentation] = []
     @State private var isAnimating = false
     @State private var dragOffset: CGSize = .zero
     @State private var isDragging = false
     
     private let swipeThreshold: CGFloat = 100
     private let animationDuration: Double = 0.3
+    
+    private struct ModalPresentation: Identifiable {
+        let id = UUID()
+        let view: AnyView
+        let transition: NavigationTransition
+    }
     
     public init(enableSwipeBack: Bool = true, @ViewBuilder root: () -> Root) {
         self.rootView = root()
@@ -37,8 +44,8 @@ public struct FluidNavigationStack<Root: View>: View {
                     
                     navigationStack[index]
                         .environment(\.navigationActions, navigationActions)
-                        .offset(x: isTopView ? dragOffset.width : 0)  // ← Use .width not .x
-                        .opacity(isTopView ? (isDragging ? max(0.3, 1 - abs(dragOffset.width) / geometry.size.width) : 1) : 0)  // ← Use .width
+                        .offset(x: isTopView ? dragOffset.width : 0)
+                        .opacity(isTopView ? (isDragging ? max(0.3, 1 - abs(dragOffset.width) / geometry.size.width) : 1) : 0)
                         .transition(.asymmetric(
                             insertion: .move(edge: .trailing),
                             removal: .move(edge: .trailing)
@@ -49,6 +56,24 @@ public struct FluidNavigationStack<Root: View>: View {
                 }
             }
             .clipped()
+        }
+        .fullScreenCover(
+            isPresented: .constant(!modalStack.isEmpty && modalStack.last?.transition == .fullScreenCover),
+            onDismiss: { dismissModal() }
+        ) {
+            if let modal = modalStack.last, modal.transition == .fullScreenCover {
+                modal.view
+                    .environment(\.navigationActions, modalNavigationActions)
+            }
+        }
+        .sheet(
+            isPresented: .constant(!modalStack.isEmpty && modalStack.last?.transition == .sheet),
+            onDismiss: { dismissModal() }
+        ) {
+            if let modal = modalStack.last, modal.transition == .sheet {
+                modal.view
+                    .environment(\.navigationActions, modalNavigationActions)
+            }
         }
     }
     
@@ -144,5 +169,76 @@ public struct FluidNavigationStack<Root: View>: View {
                 
                 isDragging = false
             }
+    }
+    
+    private var modalNavigationActions: NavigationActions {
+        NavigationActions(
+            push: modalPushAction,
+            pop: modalPopAction,
+            popToRoot: modalPopToRootAction,
+            canGoBack: modalCanGoBack
+        )
+    }
+    
+    private var modalCanGoBack: Bool {
+        !modalStack.isEmpty && !isAnimating
+    }
+    
+    private func modalPushAction(_ view: AnyView, _ transition: NavigationTransition) {
+        performModalPush(view, transition: transition)
+    }
+    
+    private func modalPopAction() {
+        performModalPop()
+    }
+    
+    private func modalPopToRootAction() {
+        performModalPopToRoot()
+    }
+    
+    private func performModalPush(_ view: AnyView, transition: NavigationTransition) {
+        guard !isAnimating else { return }
+        
+        isAnimating = true
+        
+        withAnimation(.easeInOut(duration: animationDuration)) {
+            modalStack.append(ModalPresentation(view: view, transition: transition))
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
+            self.isAnimating = false
+        }
+    }
+    
+    private func performModalPop() {
+        guard !isAnimating, !modalStack.isEmpty else { return }
+        
+        isAnimating = true
+        
+        withAnimation(.easeInOut(duration: animationDuration)) {
+            modalStack.removeLast()
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
+            self.isAnimating = false
+        }
+    }
+    
+    private func performModalPopToRoot() {
+        guard !isAnimating, !modalStack.isEmpty else { return }
+        
+        isAnimating = true
+        
+        withAnimation(.easeInOut(duration: animationDuration)) {
+            modalStack.removeAll()
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
+            self.isAnimating = false
+        }
+    }
+    
+    private func dismissModal() {
+        performModalPop()
     }
 }
