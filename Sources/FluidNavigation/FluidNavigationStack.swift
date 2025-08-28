@@ -1,3 +1,9 @@
+//
+//  FluidNavigation.swift
+//  FluidNavigation
+//
+//  Created by Arunabh Das on 8/28/25.
+//
 
 import SwiftUI
 
@@ -19,39 +25,10 @@ public struct FluidNavigationStack<Root: View>: View {
     }
     
     public var body: some View {
-        _FluidNavigationStackBody(
-            rootView: rootView,
-            enableSwipeBack: enableSwipeBack,
-            navigationStack: $navigationStack,
-            isAnimating: $isAnimating,
-            dragOffset: $dragOffset,
-            isDragging: $isDragging
-        )
-    }
-}
-
-private struct _FluidNavigationStackBody<Root: View>: View {
-    let rootView: Root
-    let enableSwipeBack: Bool
-    
-    @Binding var navigationStack: [AnyView]
-    @Binding var isAnimating: Bool
-    @Binding var dragOffset: CGSize
-    @Binding var isDragging: Bool
-    
-    private let swipeThreshold: CGFloat = 100
-    private let animationDuration: Double = 0.3
-    
-    var body: some View {
         GeometryReader { geometry in
             ZStack {
                 rootView
-                    .environment(\.navigationActions, NavigationActions(
-                        push: push,
-                        pop: pop,
-                        popToRoot: popToRoot,
-                        canGoBack: canGoBack
-                    ))
+                    .environment(\.navigationActions, navigationActions)
                     .opacity(navigationStack.isEmpty ? 1 : 0)
                     .offset(x: navigationStack.isEmpty ? 0 : -geometry.size.width * 0.3)
                 
@@ -59,14 +36,9 @@ private struct _FluidNavigationStackBody<Root: View>: View {
                     let isTopView = index == navigationStack.count - 1
                     
                     navigationStack[index]
-                        .environment(\.navigationActions, NavigationActions(
-                            push: push,
-                            pop: pop,
-                            popToRoot: popToRoot,
-                            canGoBack: canGoBack
-                        ))
-                        .offset(x: isTopView ? dragOffset.width : 0)
-                        .opacity(isTopView ? (isDragging ? max(0.3, 1 - abs(dragOffset.width) / geometry.size.width) : 1) : 0)
+                        .environment(\.navigationActions, navigationActions)
+                        .offset(x: isTopView ? dragOffset.width : 0)  // ← Use .width not .x
+                        .opacity(isTopView ? (isDragging ? max(0.3, 1 - abs(dragOffset.width) / geometry.size.width) : 1) : 0)  // ← Use .width
                         .transition(.asymmetric(
                             insertion: .move(edge: .trailing),
                             removal: .move(edge: .trailing)
@@ -80,11 +52,35 @@ private struct _FluidNavigationStackBody<Root: View>: View {
         }
     }
     
+    // Simple computed property that creates NavigationActions
+    private var navigationActions: NavigationActions {
+        NavigationActions(
+            push: pushAction,
+            pop: popAction,
+            popToRoot: popToRootAction,
+            canGoBack: canGoBack
+        )
+    }
+    
     private var canGoBack: Bool {
         !navigationStack.isEmpty && !isAnimating
     }
     
-    private func push(_ view: AnyView, _ transition: NavigationTransition) {
+    // These are just simple function references - no complex closures
+    private func pushAction(_ view: AnyView, _ transition: NavigationTransition) {
+        performPush(view, transition: transition)
+    }
+    
+    private func popAction() {
+        performPop()
+    }
+    
+    private func popToRootAction() {
+        performPopToRoot()
+    }
+    
+    // The actual implementation functions
+    private func performPush(_ view: AnyView, transition: NavigationTransition = .slide) {
         guard !isAnimating else { return }
         
         isAnimating = true
@@ -98,7 +94,7 @@ private struct _FluidNavigationStackBody<Root: View>: View {
         }
     }
     
-    private func pop() {
+    private func performPop() {
         guard !isAnimating, !navigationStack.isEmpty else { return }
         
         isAnimating = true
@@ -112,7 +108,7 @@ private struct _FluidNavigationStackBody<Root: View>: View {
         }
     }
     
-    private func popToRoot() {
+    private func performPopToRoot() {
         guard !isAnimating, !navigationStack.isEmpty else { return }
         
         isAnimating = true
@@ -129,18 +125,23 @@ private struct _FluidNavigationStackBody<Root: View>: View {
     private func swipeGesture(geometry: GeometryProxy) -> some Gesture {
         DragGesture()
             .onChanged { value in
-                guard value.translation.x > 0 && canGoBack else { return }
+                // Use .width instead of .x for CGSize
+                guard value.translation.width > 0 && canGoBack else { return }
                 isDragging = true
                 dragOffset = value.translation
             }
             .onEnded { value in
-                if value.translation.x > swipeThreshold {
-                    pop()
+                // Use .width instead of .x for CGSize
+                let dragDistance = value.translation.width
+                
+                if dragDistance > swipeThreshold {
+                    performPop()
                 } else {
                     withAnimation(.spring()) {
                         dragOffset = .zero
                     }
                 }
+                
                 isDragging = false
             }
     }

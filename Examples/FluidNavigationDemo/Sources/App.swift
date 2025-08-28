@@ -12,7 +12,9 @@ import FluidNavigation
 struct FluidNavigationDemoApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            FluidNavigationStack {
+                ContentView()
+            }
         }
     }
 }

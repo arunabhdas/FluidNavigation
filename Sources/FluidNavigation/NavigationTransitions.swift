@@ -1,3 +1,10 @@
+//
+//  NavigationTransition.swift
+//  FluidNavigation
+//
+//  Created by Arunabh Das on 8/27/25.
+//
+
 import SwiftUI
 
 // MARK: - Navigation Transitions

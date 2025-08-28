@@ -8,15 +8,8 @@
 import SwiftUI
 import FluidNavigation
 
-struct ContentView: View {
-    var body: some View {
-        FluidNavigationStack {
-            HomeView()
-        }
-    }
-}
 
-struct HomeView: View {
+struct ContentView: View {
     var body: some View {
         VStack(spacing: 20) {
             Image(systemName: "swift")
@@ -34,57 +27,70 @@ struct HomeView: View {
                 .padding(.horizontal)
             
             VStack(spacing: 16) {
-                DemoButton(
-                    title: "Slide Transition",
-                    subtitle: "Classic slide animation",
-                    systemImage: "arrow.right",
-                    color: .blue,
+                // Create destination views separately to help type inference
+                FluidNavigationButton(
                     destination: DetailView(
                         title: "Slide Animation",
                         description: "This demonstrates the classic slide transition, similar to UINavigationController.",
                         color: .blue
                     ),
                     transition: .slide
-                )
+                ) {
+                    DemoButtonView(
+                        title: "Slide Transition",
+                        subtitle: "Classic slide animation",
+                        systemImage: "arrow.right",
+                        color: .blue
+                    )
+                }
                 
-                DemoButton(
-                    title: "Fade Transition",
-                    subtitle: "Smooth opacity change",
-                    systemImage: "sparkles",
-                    color: .green,
+                FluidNavigationButton(
                     destination: DetailView(
                         title: "Fade Animation",
                         description: "A smooth fade transition that's perfect for subtle navigation changes.",
                         color: .green
                     ),
                     transition: .fade
-                )
+                ) {
+                    DemoButtonView(
+                        title: "Fade Transition",
+                        subtitle: "Smooth opacity change",
+                        systemImage: "sparkles",
+                        color: .green
+                    )
+                }
                 
-                DemoButton(
-                    title: "Scale Transition",
-                    subtitle: "Zoom in/out effect",
-                    systemImage: "plus.magnifyingglass",
-                    color: .orange,
+                FluidNavigationButton(
                     destination: DetailView(
                         title: "Scale Animation",
                         description: "Scale transition with zoom effect - great for modal-like presentations.",
                         color: .orange
                     ),
                     transition: .scale
-                )
+                ) {
+                    DemoButtonView(
+                        title: "Scale Transition",
+                        subtitle: "Zoom in/out effect",
+                        systemImage: "plus.magnifyingglass",
+                        color: .orange
+                    )
+                }
                 
-                DemoButton(
-                    title: "Slide Up Transition",
-                    subtitle: "Bottom sheet style",
-                    systemImage: "arrow.up.square",
-                    color: .purple,
+                FluidNavigationButton(
                     destination: DetailView(
                         title: "Slide Up Animation",
                         description: "Slide up from bottom, perfect for sheet-like presentations.",
                         color: .purple
                     ),
                     transition: .slideUp
-                )
+                ) {
+                    DemoButtonView(
+                        title: "Slide Up Transition",
+                        subtitle: "Bottom sheet style",
+                        systemImage: "arrow.up.square",
+                        color: .purple
+                    )
+                }
             }
             
             Spacer()
@@ -94,49 +100,42 @@ struct HomeView: View {
     }
 }
 
-struct DemoButton<Destination: View>: View {
+struct DemoButtonView: View {
     let title: String
     let subtitle: String
     let systemImage: String
     let color: Color
-    let destination: Destination
-    let transition: NavigationTransition
     
     var body: some View {
-        FluidNavigationButton(
-            destination: destination,
-            transition: transition
-        ) {
-            HStack(spacing: 16) {
-                Image(systemName: systemImage)
-                    .font(.title2)
-                    .foregroundColor(color)
-                    .frame(width: 32)
+        HStack(spacing: 16) {
+            Image(systemName: systemImage)
+                .font(.title2)
+                .foregroundColor(color)
+                .frame(width: 32)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundColor(.primary)
                 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
+                Text(subtitle)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-            .padding()
-            .background(Color(.systemBackground))
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color(.systemGray4), lineWidth: 1)
-            )
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundColor(.secondary)
         }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color(.systemGray4), lineWidth: 1)
+        )
     }
 }
 
